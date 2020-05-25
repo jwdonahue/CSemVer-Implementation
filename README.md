@@ -1,5 +1,5 @@
 # CSemVer-Implementation
-An implementation of SemVer written C.
+An implementation of SemVer written in C.
 
 Written to test a theory that it would be faster to process the raw SemVer strings, than to parse them out into scalar and string fields.
 My [research](https://github.com/semver/semver/issues/567#issuecomment-633266706) suggests that both space and time can be conserved.
