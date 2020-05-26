@@ -132,11 +132,11 @@ extern VersionParseRecord* ClassifyVersionCandidate(const char *pCandidate, Vers
 /// </summary>
 /// <param name="pV1>Ponter to version string.</param>
 /// <param name="pdr1>
-/// Pointer to parse results from ClassifyVersionCandidate(pV1), or null.
+/// Pointer to parse results from ClassifyVersionCandidate(pV1).
 /// </param>
 /// <param name="pV2>Ponter to version string.</param>
 /// <param name="pdr2>
-/// Pointer to parse results from ClassifyVersionCandidate(pV2), or null.
+/// Pointer to parse results from ClassifyVersionCandidate(pV2).
 /// </param>
 /// <returns>
 /// -1 if *pV1 < *pV2
