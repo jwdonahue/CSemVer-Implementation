@@ -359,6 +359,15 @@ VersionParseRecord* ClassifyVersionCandidate(const char *pCandidate, VersionPars
 				
 				if (!isdigit(*pIter))
 				{
+					if (pParsed->fieldNeedsAlphaToPass)
+					{
+						if ((_dot == *pIter) || (_plus == *pIter))
+						{
+							pParsed->prereleaseFieldCount--;
+							return SetVersionType(pParsed, eUnknownVersion);
+						}
+					}
+
 					if (_dot == *pIter)
 					{
 						assert(NULL != pParsed->pPrereleaseData);
@@ -378,13 +387,16 @@ VersionParseRecord* ClassifyVersionCandidate(const char *pCandidate, VersionPars
 						ParsedTagRecord *ppdr = &(pParsed->pPrereleaseData[pParsed->prereleaseFieldCount - 1]);
 						ppdr->fieldHasLeadingZero = false;
 						pParsed->state = eInPreAlphaNumericField;
+						pParsed->fieldNeedsAlphaToPass = false;
 						pParsed->pPrereleaseData[pParsed->prereleaseFieldCount].fieldHasLeadingZero = false;
 					}
 				}
 				else if ((pParsed->pPrereleaseData[pParsed->prereleaseFieldCount - 1].fieldHasLeadingZero))
 				{
-					pParsed->prereleaseFieldCount--;
-					return SetVersionType(pParsed, eUnknownVersion);
+					// At this point, we may not have a SemVer string at all, but if there's
+					// an alpha character in the field, it could pass.  So we mark this as
+					// needing an alpha character to succeed.
+					pParsed->fieldNeedsAlphaToPass = true;
 				}
 
 				pParsed->prereleaseChars++;
@@ -431,6 +443,12 @@ VersionParseRecord* ClassifyVersionCandidate(const char *pCandidate, VersionPars
 	// When we fall out of the loop, we've run out of characters to parse,
 	// and there have been no obvious problems.  But whether we have a valid
 	// SemVer string depends on how far we got.
+
+	if (pParsed->fieldNeedsAlphaToPass)
+	{
+		pParsed->prereleaseFieldCount--;
+		return SetVersionType(pParsed, eUnknownVersion);
+	}
 
 	pParsed->hasPrereleaseTag = (NULL != pParsed->pPrereleaseData);
 	pParsed->isPrereleaseVersion |= pParsed->hasPrereleaseTag;
