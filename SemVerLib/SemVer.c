@@ -694,9 +694,15 @@ int CompareVersions(const char *pV1, const VersionParseRecord *pdr1, const char 
 					return fieldCompareResult;
 				}
 
+				// At this point we have equal triples.
+				// If one or the other is lacking a prerlease tag, it's "bigger".
+				
+				if (pdr1->hasPrereleaseTag && !pdr2->hasPrereleaseTag) return 1;
+				if (!pdr1->hasPrereleaseTag && pdr2->hasPrereleaseTag) return -1;
+
 				if (pdr1->prereleaseFieldCount == pdr2->prereleaseFieldCount)
 				{
-					int prCompareResult = ComparePrereleaseTags(pV1, pdr1, pV2, pdr2);
+					return ComparePrereleaseTags(pV1, pdr1, pV2, pdr2);
 				}
 				else
 				{

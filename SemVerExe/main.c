@@ -52,20 +52,54 @@ static int Validate(void);
 static struct {
 	char *ptoken;
 	ArgHandler handler;
+	int argCount;
 } _argHandlers[] = 
 {
-	{{"v"}, Validate}, // Index zero must be Validate.
-	{{"c"}, Compare},
-	{{"validate"}, Validate},
-	{{"compare"}, Compare},
-	{{"?"}, Help},
-	{{"h"}, Help},
-	{{"help"}, Help},
+	{{"v"}, Validate, 1},
+	{{"c"}, Compare, 2},
+	{{"validate"}, Validate, 1},
+	{{"compare"}, Compare, 2},
+	{{"?"}, Help, 0},
+	{{"h"}, Help, 0},
+	{{"help"}, Help, 0},
 };
 
 static int Compare(void)
 {
-	return -2;
+	char *pv1 = _argv[_argIdx + 1];
+	char *pv2 = _argv[_argIdx + 2];
+	VersionParseRecord *pvpr1 = ClassifyVersionCandidate(pv1, NULL);
+	VersionParseRecord *pvpr2 = ClassifyVersionCandidate(pv2, NULL);
+
+	if (eSemVer_2_0_0 != pvpr1->versionType)
+	{
+		printf("Option arg '%s' is not a SemVer string.\n", pv1);
+	}
+
+	if (eSemVer_2_0_0 != pvpr2->versionType)
+	{
+		printf("Option arg '%s' is not a SemVer string.\n", pv2);
+	}
+
+	int result = CompareVersions(pv1, pvpr1, pv2, pvpr2);
+
+	switch(result)
+	{
+		case -2:
+			printf("Both strings must conform to SemVer 2.0.0 for comparison.\n");
+			break;
+		case -1:
+			printf("%s < %s", pv1, pv2);
+			break;
+		case 0:
+			printf("%s == %s", pv1, pv2);
+			break;
+	    case 1:
+			printf("%s > %s\n", pv1, pv2);
+			break;
+	}
+
+	return result;
 }
 
 static bool HandleArgs(int argc, char **argv)
@@ -110,15 +144,24 @@ static bool ParseArg(int idx)
 	if ((_hyphen == arg[0]))
 	{
 		int matchedIdx = MatchArg(arg+1);
-		if (-1 != matchedIdx) return true;
+		if (-1 != matchedIdx)
+		{
+			int optionArgsFound = _argc - idx - 1;
+			if (optionArgsFound == _argHandlers[matchedIdx].argCount)
+			{
+				return true;
+			}
+			else
+			{
+				printf("Option '%s' requires %d arguments and we found %d.\n", 
+					arg,
+					_argHandlers[matchedIdx].argCount,
+					optionArgsFound
+					);
+			}
+		}
 	}
-	else
-	{
-		// It's just a version string, caller wants validation.
-		_handlerIdx = 0;
-		return true;
-	}
-	
+
 	return false;
 }
 
@@ -128,11 +171,11 @@ static int validate(char *candidate)
 
 	if (eSemVer_2_0_0 == vpr->versionType)
 	{
-		printf("Valid semver: %s", candidate);
+		printf("Valid semver: %s\n", candidate);
 		return 0;
 	}
 
-	printf("Invalid string: %s", candidate);
+	printf("Invalid string: %s\n", candidate);
 
 	return -2;
 }
@@ -150,6 +193,10 @@ int main(int argc, char **argv)
 {
 	if (!HandleArgs(argc, argv)) return -2;
 
-	return _argHandlers[_handlerIdx].handler();
+	int result = _argHandlers[_handlerIdx].handler();
+
+	printf("\n");
+
+	return result;
 }
 
