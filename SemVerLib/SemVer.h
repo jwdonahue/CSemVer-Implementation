@@ -108,6 +108,11 @@ typedef struct _VersionParseRecord
 
 	ParseState state;
 
+	// This is set when a field is found to have 0#... form.
+	// The state is still eInPreNumericField, but we're going to fail if we
+	// reach the end of the field, before falling-back to eInPrereleaseAlpha.
+	bool fieldNeedsAlphaToPass;
+
 	// For each character that is successfully parsed, parsedIdx is incremented.
 	size_t parsedIdx;
 
