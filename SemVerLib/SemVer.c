@@ -511,6 +511,11 @@ static int CompareFields(const char *pV1, size_t idx1, const char *pV2, size_t i
 
 	switch (count)
 	{
+		case 0:
+
+			result = 0;
+			break;
+
 		case 1:
 
 			// The vast majority of version strings in use today have only one or two
@@ -632,34 +637,14 @@ static int ComparePrereleaseTags(const char *pV1, const VersionParseRecord *pdr1
 
 int CompareVersions(const char *pV1, const VersionParseRecord *pdr1, const char *pV2, const VersionParseRecord *pdr2)
 {
-	bool freePDR1;
-	bool freePDR2;
-
-	if (NULL == pdr1)
-	{
-		pdr1 = ClassifyVersionCandidate(pV1, NULL);
-		freePDR1 = true;
-	}
-	else
-	{
-		freePDR1 = false;
-	}
-
-	if (NULL == pdr2)
-	{
-		pdr2 = ClassifyVersionCandidate(pV2, NULL);
-		freePDR2 = true;
-	}
-	else
-	{
-		freePDR2 = false;
-	}
+	assert(NULL != pV1);
+	assert(NULL != pdr1);
+	assert(NULL != pV2);
+	assert(NULL != pdr2);
 
 	if ( (pdr1->versionType != eSemVer_2_0_0) || (pdr2->versionType != eSemVer_2_0_0))
 	{
 		// We don't know how to compare non-SemVer strings.
-		if (freePDR1) free((char*)pdr1);
-		if (freePDR2) free((char*)pdr2);
 		return -2;
 	}
 
@@ -723,9 +708,6 @@ int CompareVersions(const char *pV1, const VersionParseRecord *pdr1, const char 
 	{
 		return pdr1->majorDigits > pdr2->majorDigits ? 1 : -1;
 	}
-
-	if (freePDR1) free((char*)pdr1);
-	if (freePDR2) free((char*)pdr2);
 
 	return -2;
 }
