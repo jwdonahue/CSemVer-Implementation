@@ -295,10 +295,13 @@ VersionParseRecord* ClassifyVersionCandidate(const char *pCandidate, VersionPars
 
 				// Fall-thru...
 			case eInPrereleaseFirstFieldChar:
-
+			{
 				// We should be looking at a valid field char at this point.
+
 				if (IsValidPrereleaseFieldChar(*pIter)) 
 				{
+					ParsedTagRecord *ppdr = &(pParsed->pPrereleaseData[pParsed->prereleaseFieldCount]);
+
 					if (isdigit(*pIter)) 
 					{
 						pParsed->state = eInPreNumericField;
@@ -315,6 +318,7 @@ VersionParseRecord* ClassifyVersionCandidate(const char *pCandidate, VersionPars
 					// We visit this code once per valid field.
 					pParsed->prereleaseFieldCount++;
 					pParsed->prereleaseChars++;
+					ppdr->fieldLength++;
 				}
 				else
 				{
@@ -322,18 +326,18 @@ VersionParseRecord* ClassifyVersionCandidate(const char *pCandidate, VersionPars
 				}
 
 				break;
+			}
 
 			case eInPreAlphaNumericField:
-
+			{
 				// We get here only if the first character, and any subsequent characters were legal.  
 				// We're now looking for field delimiters and invalid characters.
 
+				ParsedTagRecord *ppdr = &(pParsed->pPrereleaseData[pParsed->prereleaseFieldCount - 1]);
+
 				if (_dot == *pIter)
 				{
-					assert(NULL != pParsed->pPrereleaseData);
-					ParsedTagRecord *ppdr = &(pParsed->pPrereleaseData[pParsed->prereleaseFieldCount - 1]);
 					ppdr->fieldType = _alphanumT;
-
 					pParsed->state = eInPrereleaseFirstFieldChar;
 					break;
 				}
@@ -348,15 +352,19 @@ VersionParseRecord* ClassifyVersionCandidate(const char *pCandidate, VersionPars
 				}
 
 				pParsed->prereleaseChars++;
+				ppdr->fieldLength++;
 
 				break;
+			}
 
 			case eInPreNumericField:
-
+			{
 				// We get here only if the first character, and any subsequent characters were legal.  
 				// We're now looking for field delimiters and invalid characters.
 				// We may have to fall-back to alphanum field status on valid non-digit.
 				
+				ParsedTagRecord *ppdr = &(pParsed->pPrereleaseData[pParsed->prereleaseFieldCount - 1]);
+
 				if (!isdigit(*pIter))
 				{
 					if (pParsed->fieldNeedsAlphaToPass)
@@ -370,8 +378,7 @@ VersionParseRecord* ClassifyVersionCandidate(const char *pCandidate, VersionPars
 
 					if (_dot == *pIter)
 					{
-						assert(NULL != pParsed->pPrereleaseData);
-						ParsedTagRecord *ppdr = &(pParsed->pPrereleaseData[pParsed->prereleaseFieldCount - 1]);
+						ppdr->fieldLength = (pIter - pCandidate) + 1;
 						ppdr->fieldType = _alphanumT;
 
 						pParsed->state = eInPrereleaseFirstFieldChar;
@@ -383,8 +390,6 @@ VersionParseRecord* ClassifyVersionCandidate(const char *pCandidate, VersionPars
 					}
 					else if (isalpha(*pIter) || (_hyphen == *pIter))
 					{
-						assert(NULL != pParsed->pPrereleaseData);
-						ParsedTagRecord *ppdr = &(pParsed->pPrereleaseData[pParsed->prereleaseFieldCount - 1]);
 						ppdr->fieldHasLeadingZero = false;
 						pParsed->state = eInPreAlphaNumericField;
 						pParsed->fieldNeedsAlphaToPass = false;
@@ -400,13 +405,16 @@ VersionParseRecord* ClassifyVersionCandidate(const char *pCandidate, VersionPars
 				}
 
 				pParsed->prereleaseChars++;
+				ppdr->fieldLength++;
 
 				break;
+			}
 
 			case eInMetaFirstChar:
-
+			
 				// Meta is a little bit simpler than prerelease. No worries 
 				// about leading zeros, but empty fields are still forbidden.
+
 				if (!IsValidMetaFieldChar(*pIter)) return SetVersionType(pParsed, eUnknownVersion);
 
 				pParsed->state = eInMetaField;
@@ -414,17 +422,16 @@ VersionParseRecord* ClassifyVersionCandidate(const char *pCandidate, VersionPars
 				pParsed->metaFieldCount++;
 
 				break;
-
+			
 			case eInMetaField :
-				
+
 				// We get here only if the first character, and any subsequent characters were legal.  
 				// Watch for field delimiters and invalid characters.
 
 				if (_dot == *pIter)
 				{
-					assert(NULL != pParsed->pMetaData);
-					ParsedTagRecord *ppdr = &(pParsed->pMetaData[pParsed->metaFieldCount - 1]);
-					ppdr->fieldLength = (pIter - pCandidate) + 1;
+					ParsedTagRecord *pmdr = &(pParsed->pMetaData[pParsed->metaFieldCount - 1]);
+					pmdr->fieldLength = (pIter - pCandidate) + 1;
 					pParsed->state = eInMetaFirstChar;
 				}
 				else if (!IsValidMetaFieldChar(*pIter))
@@ -711,5 +718,3 @@ int CompareVersions(const char *pV1, const VersionParseRecord *pdr1, const char 
 
 	return -2;
 }
-
-
